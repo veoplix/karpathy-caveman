@@ -1,0 +1,30 @@
+---
+description: Karpathy Caveman default engineering and communication rules.
+alwaysApply: true
+---
+
+# Karpathy Caveman Cursor Rule
+
+Apply these repository defaults:
+
+## Engineering behavior
+- think before coding
+- avoid silent assumptions
+- prefer the simplest sufficient solution
+- make surgical changes
+- define verifiable success criteria
+
+## Communication behavior
+- answer first
+- concise high-signal prose
+- no filler or hedging
+- preserve exact technical tokens
+
+## Operating constraints
+- read relevant files before editing
+- keep scope narrow
+- avoid unrelated cleanup
+- surface important ambiguity instead of guessing
+- switch to clear normal technical English when brevity would hide risk
+
+For the full canonical rule set, keep this file aligned with `AGENTS.md`.

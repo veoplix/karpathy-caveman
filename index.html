@@ -1,0 +1,1387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Karpathy Caveman | Cross-Assistant AI Coding Mode</title>
+  <meta
+    name="description"
+    content="Karpathy Caveman is a cross-assistant customization toolkit for GitHub Copilot, Claude Code, Codex, and Cursor. It combines disciplined engineering behavior with concise high-signal communication."
+  >
+  <style>
+    :root {
+      color-scheme: light;
+      --page-bg: #f3ecdf;
+      --page-bg-deep: #e8dcc9;
+      --surface: rgba(255, 251, 245, 0.84);
+      --surface-strong: rgba(255, 248, 238, 0.95);
+      --surface-border: rgba(58, 67, 64, 0.16);
+      --text-main: #1f2a2b;
+      --text-muted: #4d5c5a;
+      --accent-clay: #b55d38;
+      --accent-sage: #5b7c73;
+      --accent-gold: #d0a14b;
+      --accent-ink: #24363a;
+      --shadow-soft: 0 20px 48px rgba(35, 37, 35, 0.12);
+      --shadow-card: 0 10px 28px rgba(35, 37, 35, 0.08);
+      --radius-xl: 28px;
+      --radius-lg: 22px;
+      --radius-md: 16px;
+      --content-width: 1180px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Avenir Next", "Segoe UI Variable Text", "Trebuchet MS", sans-serif;
+      color: var(--text-main);
+      background:
+        radial-gradient(circle at top left, rgba(208, 161, 75, 0.24), transparent 28%),
+        radial-gradient(circle at top right, rgba(91, 124, 115, 0.18), transparent 24%),
+        linear-gradient(180deg, var(--page-bg) 0%, var(--page-bg-deep) 100%);
+      line-height: 1.65;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(36, 54, 58, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(36, 54, 58, 0.035) 1px, transparent 1px);
+      background-size: 32px 32px;
+      mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.78), transparent 88%);
+    }
+
+    a {
+      color: inherit;
+    }
+
+    .skip-link {
+      position: absolute;
+      left: -999px;
+      top: 16px;
+      background: var(--accent-ink);
+      color: #fff;
+      padding: 0.8rem 1rem;
+      border-radius: 999px;
+      z-index: 10;
+    }
+
+    .skip-link:focus {
+      left: 16px;
+    }
+
+    .page-shell {
+      width: min(100% - 32px, var(--content-width));
+      margin: 0 auto;
+      padding: 28px 0 72px;
+      position: relative;
+    }
+
+    .site-nav {
+      position: sticky;
+      top: 12px;
+      z-index: 5;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      margin-bottom: 24px;
+      background: rgba(255, 249, 241, 0.72);
+      border: 1px solid var(--surface-border);
+      border-radius: 999px;
+      backdrop-filter: blur(18px);
+      box-shadow: var(--shadow-card);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.96rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      background:
+        linear-gradient(135deg, rgba(181, 93, 56, 0.9), rgba(36, 54, 58, 0.96));
+      color: #fff;
+      font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+      font-size: 1.2rem;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    }
+
+    .nav-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      padding: 0.55rem 0.9rem;
+      border-radius: 999px;
+      color: var(--text-muted);
+      font-size: 0.94rem;
+      transition: background-color 180ms ease, color 180ms ease, transform 180ms ease;
+    }
+
+    .nav-links a:hover,
+    .nav-links a:focus-visible,
+    .nav-links a.is-active {
+      background: rgba(91, 124, 115, 0.14);
+      color: var(--text-main);
+      transform: translateY(-1px);
+      outline: none;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.35fr 0.95fr;
+      gap: 24px;
+      align-items: stretch;
+      margin-bottom: 28px;
+    }
+
+    .hero-panel,
+    .surface-card,
+    .metric-card,
+    .path-card,
+    .benefit-card,
+    .detail-card,
+    .timeline-step,
+    .support-card,
+    .callout,
+    .footer-card {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-soft);
+      backdrop-filter: blur(12px);
+    }
+
+    .hero-copy {
+      padding: 38px clamp(22px, 3vw, 44px);
+      background:
+        linear-gradient(160deg, rgba(255, 248, 238, 0.96), rgba(255, 252, 247, 0.78));
+    }
+
+    .hero-side {
+      padding: 30px 28px;
+      background:
+        linear-gradient(180deg, rgba(36, 54, 58, 0.92), rgba(91, 124, 115, 0.87));
+      color: #f8f3ec;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-side::after {
+      content: "";
+      position: absolute;
+      inset: auto -90px -90px auto;
+      width: 240px;
+      height: 240px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(208, 161, 75, 0.3), transparent 66%);
+    }
+
+    .eyebrow {
+      margin: 0 0 12px;
+      color: var(--accent-clay);
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2,
+    h3 {
+      font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, serif;
+      line-height: 1.1;
+      margin: 0;
+    }
+
+    h1 {
+      font-size: clamp(2.8rem, 7vw, 5rem);
+      margin-bottom: 16px;
+      letter-spacing: -0.03em;
+    }
+
+    h2 {
+      font-size: clamp(2rem, 4vw, 3rem);
+      margin-bottom: 14px;
+    }
+
+    h3 {
+      font-size: 1.35rem;
+      margin-bottom: 10px;
+    }
+
+    p {
+      margin: 0 0 1rem;
+    }
+
+    .lead {
+      font-size: clamp(1.12rem, 2vw, 1.3rem);
+      color: var(--text-muted);
+      max-width: 42rem;
+    }
+
+    .cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin: 28px 0 26px;
+    }
+
+    .button,
+    .ghost-button,
+    .tab-button {
+      border: none;
+      border-radius: 999px;
+      padding: 0.85rem 1.15rem;
+      font: inherit;
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease, color 180ms ease;
+    }
+
+    .button {
+      background: linear-gradient(135deg, var(--accent-clay), #c67e45);
+      color: #fff;
+      font-weight: 700;
+      box-shadow: 0 12px 22px rgba(181, 93, 56, 0.22);
+    }
+
+    .ghost-button {
+      background: rgba(91, 124, 115, 0.12);
+      color: var(--text-main);
+      font-weight: 700;
+    }
+
+    .button:hover,
+    .ghost-button:hover,
+    .tab-button:hover,
+    .button:focus-visible,
+    .ghost-button:focus-visible,
+    .tab-button:focus-visible {
+      transform: translateY(-2px);
+      outline: none;
+    }
+
+    .hero-metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .metric-card {
+      padding: 16px 14px;
+      border-radius: var(--radius-md);
+      background: rgba(255, 250, 244, 0.88);
+    }
+
+    .metric-card strong {
+      display: block;
+      font-size: 1.5rem;
+      margin-bottom: 2px;
+      color: var(--accent-ink);
+    }
+
+    .metric-card span {
+      color: var(--text-muted);
+      font-size: 0.92rem;
+    }
+
+    .hero-side p,
+    .hero-side li {
+      color: rgba(248, 243, 236, 0.9);
+    }
+
+    .hero-list {
+      margin: 18px 0 22px;
+      padding-left: 18px;
+    }
+
+    .hero-list li + li {
+      margin-top: 0.55rem;
+    }
+
+    main {
+      display: grid;
+      gap: 26px;
+    }
+
+    section {
+      scroll-margin-top: 110px;
+    }
+
+    .section-card {
+      padding: clamp(24px, 2.6vw, 36px);
+    }
+
+    .section-intro {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+      gap: 18px;
+      align-items: start;
+      margin-bottom: 20px;
+    }
+
+    .section-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      margin-bottom: 14px;
+      padding: 0.45rem 0.75rem;
+      border-radius: 999px;
+      background: rgba(91, 124, 115, 0.1);
+      color: var(--accent-ink);
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .grid-3,
+    .grid-4,
+    .path-grid,
+    .benefit-grid,
+    .support-grid,
+    .detail-grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .grid-3,
+    .path-grid,
+    .benefit-grid,
+    .detail-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .grid-4,
+    .support-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .surface-card,
+    .benefit-card,
+    .path-card,
+    .detail-card,
+    .support-card,
+    .callout,
+    .footer-card,
+    .timeline-step {
+      padding: 18px 18px 20px;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+    }
+
+    .surface-card p:last-child,
+    .benefit-card p:last-child,
+    .path-card p:last-child,
+    .detail-card p:last-child,
+    .support-card p:last-child,
+    .callout p:last-child,
+    .footer-card p:last-child,
+    .timeline-step p:last-child {
+      margin-bottom: 0;
+    }
+
+    .surface-card strong,
+    .path-card strong,
+    .detail-card strong,
+    .support-card strong,
+    .timeline-step strong {
+      color: var(--accent-ink);
+    }
+
+    .kicker {
+      display: inline-block;
+      margin-bottom: 10px;
+      color: var(--accent-sage);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .section-aside {
+      padding: 18px;
+      border-radius: var(--radius-lg);
+      background: rgba(36, 54, 58, 0.93);
+      color: #f7f0e6;
+      box-shadow: var(--shadow-card);
+    }
+
+    .section-aside h3,
+    .section-aside strong {
+      color: #fff;
+    }
+
+    .section-aside ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .section-aside li + li {
+      margin-top: 0.45rem;
+    }
+
+    .pill-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 0;
+      margin: 16px 0 0;
+      list-style: none;
+    }
+
+    .pill-list li {
+      padding: 0.55rem 0.8rem;
+      border-radius: 999px;
+      background: rgba(181, 93, 56, 0.1);
+      color: var(--accent-ink);
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .tab-shell {
+      display: grid;
+      gap: 16px;
+    }
+
+    .tab-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .tab-button {
+      background: rgba(91, 124, 115, 0.08);
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+
+    .tab-button[aria-selected="true"] {
+      background: linear-gradient(135deg, rgba(181, 93, 56, 0.95), rgba(198, 126, 69, 0.95));
+      color: #fff;
+      box-shadow: 0 12px 20px rgba(181, 93, 56, 0.18);
+    }
+
+    .assistant-panel {
+      padding: 22px;
+      border-radius: var(--radius-lg);
+      background: rgba(255, 251, 245, 0.92);
+      border: 1px solid var(--surface-border);
+      box-shadow: var(--shadow-card);
+    }
+
+    .assistant-panel h3 {
+      margin-bottom: 8px;
+    }
+
+    .panel-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .panel-item {
+      padding: 14px;
+      border-radius: var(--radius-md);
+      background: rgba(91, 124, 115, 0.08);
+    }
+
+    .panel-item strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--accent-ink);
+    }
+
+    .path-card code,
+    .panel-item code,
+    .detail-card code,
+    .support-card code,
+    .callout code,
+    pre code,
+    code.inline {
+      font-family: "Consolas", "Liberation Mono", "Courier New", monospace;
+      font-size: 0.94em;
+    }
+
+    pre {
+      margin: 0;
+      padding: 16px;
+      overflow-x: auto;
+      border-radius: var(--radius-lg);
+      background: #1f2a2b;
+      color: #f5efe6;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+
+    .timeline {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .timeline-step {
+      position: relative;
+      padding-top: 56px;
+    }
+
+    .timeline-step::before {
+      content: attr(data-step);
+      position: absolute;
+      top: 18px;
+      left: 18px;
+      width: 30px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: rgba(181, 93, 56, 0.14);
+      color: var(--accent-clay);
+      font-weight: 800;
+    }
+
+    .callout {
+      background: linear-gradient(160deg, rgba(255, 251, 245, 0.98), rgba(249, 243, 233, 0.86));
+    }
+
+    .callout-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .footer-card {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+      gap: 18px;
+      align-items: start;
+      padding: 24px;
+      margin-top: 8px;
+    }
+
+    .footer-card ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .footer-card li + li {
+      margin-top: 0.4rem;
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .muted {
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 1080px) {
+      .hero,
+      .section-intro,
+      .footer-card {
+        grid-template-columns: 1fr;
+      }
+
+      .grid-4,
+      .support-grid,
+      .grid-3,
+      .path-grid,
+      .benefit-grid,
+      .detail-grid,
+      .timeline,
+      .callout-grid,
+      .panel-grid,
+      .hero-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 760px) {
+      .page-shell {
+        width: min(100% - 20px, var(--content-width));
+        padding-top: 18px;
+      }
+
+      .site-nav {
+        border-radius: 24px;
+        align-items: flex-start;
+      }
+
+      .nav-links {
+        width: 100%;
+      }
+
+      .grid-4,
+      .support-grid,
+      .grid-3,
+      .path-grid,
+      .benefit-grid,
+      .detail-grid,
+      .timeline,
+      .callout-grid,
+      .panel-grid,
+      .hero-metrics {
+        grid-template-columns: 1fr;
+      }
+
+      .section-card,
+      .hero-copy,
+      .hero-side {
+        padding-left: 20px;
+        padding-right: 20px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+
+      *,
+      *::before,
+      *::after {
+        animation: none !important;
+        transition: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+  <div class="page-shell">
+    <nav class="site-nav" aria-label="Primary">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">KC</div>
+        <span>Karpathy Caveman</span>
+      </div>
+      <div class="nav-links">
+        <a href="#idea">Idea</a>
+        <a href="#benefits">Benefits</a>
+        <a href="#paths">Usage</a>
+        <a href="#assistants">Assistants</a>
+        <a href="#architecture">Architecture</a>
+        <a href="#verify">Verify</a>
+        <a href="#limits">Limits</a>
+        <a href="#resources">Resources</a>
+      </div>
+    </nav>
+
+    <header class="hero" id="top">
+      <section class="hero-panel hero-copy" aria-labelledby="hero-title">
+        <p class="eyebrow">Cross-assistant AI coding mode</p>
+        <h1 id="hero-title">One coherent operating model for AI coding assistants.</h1>
+        <p class="lead">
+          Karpathy Caveman merges disciplined engineering behavior with compressed,
+          high-signal communication, then packages that mode for GitHub Copilot,
+          Claude Code, Codex, and Cursor without fragmenting the idea into four incompatible personas.
+        </p>
+        <div class="cta-row">
+          <a class="button" href="https://github.com/veoplix/karpathy-caveman" target="_blank" rel="noreferrer">Open the repository</a>
+          <a class="ghost-button" href="#paths">See every way to use it</a>
+          <a class="ghost-button" href="#assistants">Explore assistant support</a>
+        </div>
+        <div class="hero-metrics" aria-label="Project highlights">
+          <article class="metric-card">
+            <strong>4</strong>
+            <span>supported assistants</span>
+          </article>
+          <article class="metric-card">
+            <strong>2</strong>
+            <span>canonical sources</span>
+          </article>
+          <article class="metric-card">
+            <strong>1</strong>
+            <span>shared behavior model</span>
+          </article>
+          <article class="metric-card">
+            <strong>Many</strong>
+            <span>deployment shapes</span>
+          </article>
+        </div>
+      </section>
+
+      <aside class="hero-panel hero-side" aria-label="Summary">
+        <h2>What it is trying to fix</h2>
+        <p>
+          AI coding assistants often fail in predictable ways: they guess silently,
+          over-explain obvious things, produce larger diffs than necessary, and drift when teams move between products.
+        </p>
+        <ul class="hero-list">
+          <li>Too much filler, not enough engineering signal.</li>
+          <li>Too much confidence when requirements are ambiguous.</li>
+          <li>Too many product-specific prompt hacks that fragment team behavior.</li>
+          <li>Too little structure around verification, rollout, and maintenance.</li>
+        </ul>
+        <p>
+          Karpathy Caveman gives you one portable answer: think before coding, keep scope narrow,
+          communicate tersely, and switch back to normal technical English when risk or ambiguity makes compression unsafe.
+        </p>
+      </aside>
+    </header>
+
+    <main id="content">
+      <section id="idea" class="hero-panel section-card">
+        <div class="section-intro">
+          <div>
+            <span class="section-tag">The idea</span>
+            <h2>Karpathy discipline plus Caveman compression</h2>
+            <p>
+              The project does not try to create a new personality for its own sake. It deliberately merges two useful constraints.
+              From the Karpathy side it keeps engineering discipline: think before acting, avoid silent assumptions, prefer the simplest sufficient solution,
+              make surgical changes, and define verifiable success criteria. From the Caveman side it keeps communication compression: answer first,
+              cut filler, preserve exact technical tokens, and use short direct phrasing.
+            </p>
+            <p>
+              The result is a mode that is terse without becoming careless. A core rule is the clarity override: when safety, ambiguity, migrations,
+              credentials, rollback, or irreversible operations are involved, the mode must expand back into clear normal technical English.
+              That keeps the output readable and fast in the common case without letting brevity hide risk.
+            </p>
+          </div>
+          <aside class="section-aside">
+            <h3>Canonical sources</h3>
+            <p><strong>AGENTS.md</strong> is the assistant-agnostic always-on rules file.</p>
+            <p><strong>.agents/skills/karpathy-caveman/SKILL.md</strong> is the shared portable skill.</p>
+            <ul>
+              <li>Edit those first when the mode changes.</li>
+              <li>Mirror assistant-specific copies after that.</li>
+              <li>Validate the repository before publishing updates.</li>
+            </ul>
+          </aside>
+        </div>
+
+        <div class="grid-4">
+          <article class="surface-card">
+            <span class="kicker">Reasoning</span>
+            <h3>Think before acting</h3>
+            <p>Read relevant files, surface material ambiguity, and translate vague asks into explicit completion criteria.</p>
+          </article>
+          <article class="surface-card">
+            <span class="kicker">Editing</span>
+            <h3>Prefer the smallest sufficient diff</h3>
+            <p>Touch only what the task requires, match local style, and avoid unrelated cleanup or speculative abstractions.</p>
+          </article>
+          <article class="surface-card">
+            <span class="kicker">Communication</span>
+            <h3>Answer first, keep signal high</h3>
+            <p>Short direct phrasing, no filler, exact technical tokens preserved, and explicit tradeoffs when they matter.</p>
+          </article>
+          <article class="surface-card">
+            <span class="kicker">Safety</span>
+            <h3>Expand when compression becomes risky</h3>
+            <p>The clarity override prevents terse output from hiding assumptions, rollback risk, or security-sensitive details.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="benefits" class="hero-panel section-card">
+        <div class="section-intro">
+          <div>
+            <span class="section-tag">Benefits</span>
+            <h2>Why teams and individual developers use it</h2>
+            <p>
+              The practical benefits are not just cosmetic. Karpathy Caveman changes how the assistant reasons, how much it touches,
+              how easy its output is to review, and how portable that behavior remains across products. The direct benefits in practice include the categories below.
+            </p>
+          </div>
+          <aside class="section-aside">
+            <h3>Default tradeoff</h3>
+            <p>
+              The mode deliberately biases toward <strong>caution over speed</strong>. For trivial tasks it still allows judgment.
+              For non-trivial tasks it favors correctness, clarity, and minimal scope over fast but sloppy output.
+            </p>
+          </aside>
+        </div>
+
+        <div class="benefit-grid">
+          <article class="benefit-card">
+            <h3>Lower review cost</h3>
+            <p>Smaller diffs and shorter explanations make it easier to spot the real change, reason about impact, and review quickly.</p>
+          </article>
+          <article class="benefit-card">
+            <h3>Less silent guessing</h3>
+            <p>The mode pushes assistants to expose ambiguity instead of inventing requirements under confident prose.</p>
+          </article>
+          <article class="benefit-card">
+            <h3>Better verification habits</h3>
+            <p>It frames tasks around explicit outcomes, falsifiable checks, and post-change validation instead of vague completion claims.</p>
+          </article>
+          <article class="benefit-card">
+            <h3>Cleaner communication</h3>
+            <p>Answer-first responses reduce wasted scanning time, especially when the user already understands the local codebase.</p>
+          </article>
+          <article class="benefit-card">
+            <h3>Safer compression</h3>
+            <p>The clarity override preserves concise defaults while forcing fuller instructions around risk, security, migrations, and rollback.</p>
+          </article>
+          <article class="benefit-card">
+            <h3>Cross-tool consistency</h3>
+            <p>One behavior model can be deployed across Copilot, Claude, Codex, and Cursor instead of maintaining unrelated prompt stacks.</p>
+          </article>
+          <article class="benefit-card">
+            <h3>Easier maintenance</h3>
+            <p>Two canonical sources keep the mode maintainable while mirrors and bundles provide assistant-native distribution surfaces.</p>
+          </article>
+          <article class="benefit-card">
+            <h3>Better mixed-assistant rollout</h3>
+            <p>Teams using multiple assistants can share the same rules without creating duplicate discovery roots or conflicting instructions.</p>
+          </article>
+          <article class="benefit-card">
+            <h3>Portable individual workflow</h3>
+            <p>A solo developer can carry the same terse, minimal-diff expectations across local tools, hosted agents, and repository configurations.</p>
+          </article>
+        </div>
+
+        <div class="grid-3" style="margin-top: 16px;">
+          <article class="surface-card">
+            <span class="kicker">For individual developers</span>
+            <h3>Stay consistent across tools</h3>
+            <p>You can keep one terse, disciplined workflow while moving between Copilot, Claude, Codex, and Cursor instead of rebuilding your prompting habits every time.</p>
+          </article>
+          <article class="surface-card">
+            <span class="kicker">For teams and reviewers</span>
+            <h3>Standardize expectations</h3>
+            <p>The same operating model can guide implementation, reviews, refactors, and debugging across a team, which lowers review churn and makes AI output easier to compare.</p>
+          </article>
+          <article class="surface-card">
+            <span class="kicker">For maintainers</span>
+            <h3>Reduce configuration drift</h3>
+            <p>Canonical files, mirrored bundles, and validator-backed checks make it easier to evolve the mode without losing control of what target repositories actually receive.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="paths" class="hero-panel section-card">
+        <div class="section-intro">
+          <div>
+            <span class="section-tag">Use paths</span>
+            <h2>Every practical way to use the repository</h2>
+            <p>
+              The repository supports more than one rollout shape on purpose. Some users want only a manual prompt.
+              Some want a whole assistant-native bundle. Some want one shared core across several tools. Some teams need a publishable Copilot plugin.
+              The paths below are the supported ways to use the project without inventing undocumented combinations.
+            </p>
+          </div>
+          <aside class="section-aside">
+            <h3>Important Copilot distinction</h3>
+            <p>
+              <strong>copilot/karpathy-caveman/</strong> is a repo-file source bundle. It collects the relevant files in one place.
+              It is not an instruction to copy every file into every target repository.
+            </p>
+          </aside>
+        </div>
+
+        <div class="callout" style="margin-bottom: 16px;">
+          <h3>Rollout shape and day-to-day use are different</h3>
+          <p>
+            A repository can install Karpathy Caveman one way and then use it several different ways after that.
+            In practice the mode can be consumed as always-on repository defaults, explicit prompt commands, native agents or subagents,
+            shared skills, Copilot plugin payloads, or source bundles that help teams assemble a custom rollout deliberately.
+          </p>
+        </div>
+
+        <div class="grid-3" style="margin-bottom: 16px;">
+          <article class="surface-card">
+            <span class="kicker">Always on</span>
+            <h3>Load repository defaults</h3>
+            <p>Use <code>AGENTS.md</code>, <code>CLAUDE.md</code>, or Cursor rules when you want the mode applied by default to normal repository work.</p>
+          </article>
+          <article class="surface-card">
+            <span class="kicker">Manual trigger</span>
+            <h3>Invoke it explicitly for one task</h3>
+            <p>Use the Copilot prompt file, shared skill surfaces, or Claude-native skill invocation when you want opt-in activation instead of always-on behavior.</p>
+          </article>
+          <article class="surface-card">
+            <span class="kicker">Native agent</span>
+            <h3>Select a dedicated agent or subagent</h3>
+            <p>Use Copilot agents, Claude subagents, Codex roles, or Cursor agents when you want the mode wrapped in a named, native assistant entrypoint.</p>
+          </article>
+          <article class="surface-card">
+            <span class="kicker">Portable skill</span>
+            <h3>Keep the skill reusable</h3>
+            <p>Use the shared skill format when you want one reusable task-mode definition that can travel across assistants that understand the shared Agent Skills shape.</p>
+          </article>
+          <article class="surface-card">
+            <span class="kicker">Packaged rollout</span>
+            <h3>Ship the plugin package</h3>
+            <p>Use the Copilot plugin package when your distribution model is plugin-based rather than repository-file based.</p>
+          </article>
+          <article class="surface-card">
+            <span class="kicker">Reference material</span>
+            <h3>Use the bundles as source guides</h3>
+            <p>Use the assistant bundles and slices as authoritative source material when designing your own rollout, documentation, or internal template repository.</p>
+          </article>
+        </div>
+
+        <div class="path-grid">
+          <article class="path-card">
+            <span class="kicker">Shared core</span>
+            <h3>Use the canonical core only</h3>
+            <p>Copy <code>AGENTS.md</code> and <code>.agents/skills/karpathy-caveman/SKILL.md</code> when the target environment can already use the shared formats directly.</p>
+          </article>
+          <article class="path-card">
+            <span class="kicker">Mixed assistant repo</span>
+            <h3>Keep one shared source of truth</h3>
+            <p>Use the shared core plus the assistant-native bundle you actually need. This is the preferred posture for repositories shared across tools.</p>
+          </article>
+          <article class="path-card">
+            <span class="kicker">Copilot full bundle</span>
+            <h3>Take the full repo-file source bundle</h3>
+            <p>Use <code>copilot/karpathy-caveman/</code> when you want all Copilot repository-file assets collected in one place before deciding which pieces to copy.</p>
+          </article>
+          <article class="path-card">
+            <span class="kicker">Copilot slice</span>
+            <h3>Install only always-on instructions</h3>
+            <p>Use <code>copilot/instruction/</code> if you want the Copilot-specific always-on adapter without taking prompt or plugin packaging.</p>
+          </article>
+          <article class="path-card">
+            <span class="kicker">Copilot slice</span>
+            <h3>Install only the slash command</h3>
+            <p>Use <code>copilot/prompt/</code> if you only want <code>/karpathy-caveman</code> as a manual trigger for the current conversation.</p>
+          </article>
+          <article class="path-card">
+            <span class="kicker">Copilot plugin</span>
+            <h3>Ship a packaged agent and skill</h3>
+            <p>Use <code>copilot/plugin/karpathy-caveman/</code> when your team wants a publishable plugin payload rather than repository files.</p>
+          </article>
+          <article class="path-card">
+            <span class="kicker">Claude</span>
+            <h3>Copy the Claude-native bundle</h3>
+            <p>Use <code>claude/karpathy-caveman/</code> to get <code>AGENTS.md</code>, <code>CLAUDE.md</code>, a Claude skill, and a Claude subagent together.</p>
+          </article>
+          <article class="path-card">
+            <span class="kicker">Codex</span>
+            <h3>Copy the Codex-native bundle</h3>
+            <p>Use <code>codex/karpathy-caveman/</code> to get the shared core plus the Codex-native role file in <code>.codex/agents/</code>.</p>
+          </article>
+          <article class="path-card">
+            <span class="kicker">Cursor</span>
+            <h3>Copy the Cursor-native bundle</h3>
+            <p>Use <code>cursor/karpathy-caveman/</code> to get the shared core, a Cursor always-apply rule, and a Cursor-native subagent.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="assistants" class="hero-panel section-card">
+        <div class="section-intro">
+          <div>
+            <span class="section-tag">Assistant support</span>
+            <h2>Supported assistants and their discovery surfaces</h2>
+            <p>
+              The project is precise about where each assistant should discover the mode. Different products understand different file types,
+              so the repository maps the same behavior model onto each assistant's actual entrypoints instead of pretending one file shape fits all of them.
+            </p>
+          </div>
+          <aside class="section-aside">
+            <h3>Repository link</h3>
+            <p>
+              Browse the full project, bundles, validator, and documentation in the public repository:
+              <a href="https://github.com/veoplix/karpathy-caveman" target="_blank" rel="noreferrer">github.com/veoplix/karpathy-caveman</a>
+            </p>
+          </aside>
+        </div>
+
+        <div class="tab-shell">
+          <div class="tab-row" role="tablist" aria-label="Assistant selector">
+            <button class="tab-button" role="tab" id="tab-copilot" aria-selected="true" aria-controls="assistant-panel" data-assistant="copilot">GitHub Copilot</button>
+            <button class="tab-button" role="tab" id="tab-claude" aria-selected="false" aria-controls="assistant-panel" data-assistant="claude">Claude Code</button>
+            <button class="tab-button" role="tab" id="tab-codex" aria-selected="false" aria-controls="assistant-panel" data-assistant="codex">Codex</button>
+            <button class="tab-button" role="tab" id="tab-cursor" aria-selected="false" aria-controls="assistant-panel" data-assistant="cursor">Cursor</button>
+          </div>
+          <article id="assistant-panel" class="assistant-panel" role="tabpanel" aria-labelledby="tab-copilot"></article>
+        </div>
+      </section>
+
+      <section id="architecture" class="hero-panel section-card">
+        <div class="section-intro">
+          <div>
+            <span class="section-tag">Architecture</span>
+            <h2>How the repository is organized</h2>
+            <p>
+              The layout exists to solve two competing problems at once: keep one canonical source of truth and still provide assistant-native distribution.
+              The answer is a layered repository that separates canonical content, direct-use files, copyable bundles, and Copilot-specific slices.
+            </p>
+          </div>
+          <aside class="section-aside">
+            <h3>Discovery safety choices</h3>
+            <ul>
+              <li>No root <code>.github/copilot-instructions.md</code>.</li>
+              <li>No root <code>.github/skills</code>.</li>
+              <li>No root <code>.claude/skills</code> or <code>.claude/agents</code>.</li>
+              <li>No root <code>.codex/agents</code>.</li>
+              <li>Exactly one shared root skill in <code>.agents/skills/</code>.</li>
+            </ul>
+          </aside>
+        </div>
+
+        <div class="detail-grid">
+          <article class="detail-card">
+            <span class="kicker">Layer 1</span>
+            <h3>Canonical shared core</h3>
+            <p><strong>Files:</strong> <code>AGENTS.md</code> and <code>.agents/skills/karpathy-caveman/SKILL.md</code></p>
+            <p>These are the real source of truth for the mode.</p>
+          </article>
+          <article class="detail-card">
+            <span class="kicker">Layer 2</span>
+            <h3>Root direct-use files</h3>
+            <p><strong>Files:</strong> prompt, agent, Cursor rule, Cursor agent, and <code>CLAUDE.md</code></p>
+            <p>These make the repository itself usable while still avoiding duplicate discovery roots.</p>
+          </article>
+          <article class="detail-card">
+            <span class="kicker">Layer 3</span>
+            <h3>Copyable assistant bundles</h3>
+            <p><strong>Folders:</strong> <code>copilot/karpathy-caveman/</code>, <code>claude/karpathy-caveman/</code>, <code>codex/karpathy-caveman/</code>, <code>cursor/karpathy-caveman/</code></p>
+            <p>These are the supported assistant-native distribution packages.</p>
+          </article>
+          <article class="detail-card">
+            <span class="kicker">Layer 4</span>
+            <h3>Copilot narrower slices</h3>
+            <p><strong>Folders:</strong> <code>copilot/instruction/</code>, <code>copilot/prompt/</code>, <code>copilot/plugin/karpathy-caveman/</code></p>
+            <p>These exist because Copilot supports several materially different delivery mechanisms.</p>
+          </article>
+          <article class="detail-card">
+            <span class="kicker">Maintenance</span>
+            <h3>Mirrors are intentional</h3>
+            <p>Assistant bundles contain mirrored copies of canonical files so target repositories can receive assistant-native layouts without manual reconstruction.</p>
+          </article>
+          <article class="detail-card">
+            <span class="kicker">Validation</span>
+            <h3>Structure is checked automatically</h3>
+            <p>The validator checks required files, forbidden root paths, frontmatter, mirror drift, JSON and TOML validity, and Markdown links.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="verify" class="hero-panel section-card">
+        <div class="section-intro">
+          <div>
+            <span class="section-tag">Rollout and verification</span>
+            <h2>How to adopt it without guesswork</h2>
+            <p>
+              The project is meant to be copied and maintained, not just admired. A rollout should be deliberate:
+              choose the repository posture, install the shared core when appropriate, add assistant-specific adapters, validate placement,
+              and then test whether the assistant actually behaves the way the mode intends.
+            </p>
+          </div>
+          <aside class="section-aside">
+            <h3>Validator command</h3>
+            <pre><code>python scripts/validate_repo.py</code></pre>
+          </aside>
+        </div>
+
+        <div class="timeline">
+          <article class="timeline-step" data-step="1">
+            <h3>Choose the deployment shape</h3>
+            <p>Decide whether the target is Copilot-only, Claude-only, Codex-only, Cursor-only, or mixed-assistant.</p>
+          </article>
+          <article class="timeline-step" data-step="2">
+            <h3>Install the right files</h3>
+            <p>Copy the shared core and the assistant bundle or slice that matches the target workflow. Do not add duplicate roots casually.</p>
+          </article>
+          <article class="timeline-step" data-step="3">
+            <h3>Validate and test behavior</h3>
+            <p>Check exact file placement, confirm assistant discovery, and run one small coding task to test concise reasoning and minimal diffs.</p>
+          </article>
+        </div>
+
+        <div class="callout-grid" style="margin-top: 16px;">
+          <article class="callout">
+            <h3>What to verify in a target repository</h3>
+            <ul class="pill-list" aria-label="Target repository verification checklist">
+              <li>Exact file placement</li>
+              <li>Prompt, skill, rule, or agent discovery</li>
+              <li>Concise reasoning on a small task</li>
+              <li>Surgical edits instead of broad churn</li>
+              <li>Explicit verification-minded behavior</li>
+            </ul>
+          </article>
+          <article class="callout">
+            <h3>How to maintain it</h3>
+            <p>
+              Edit the canonical sources first, sync mirrors second, re-run the validator third, and update bundle documentation whenever delivery guidance changes.
+              That is the maintenance model the repository is already using.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section id="limits" class="hero-panel section-card">
+        <div class="section-intro">
+          <div>
+            <span class="section-tag">Limits and non-goals</span>
+            <h2>What the project does not claim to solve</h2>
+            <p>
+              Karpathy Caveman deliberately focuses on chat, instruction, skill, prompt, rule, and agent surfaces.
+              It does not claim total control over every assistant behavior, and it does not try to erase the real differences between product discovery systems.
+            </p>
+          </div>
+          <aside class="section-aside">
+            <h3>Reality check</h3>
+            <p>
+              This project improves consistency and quality, but host product UI, discovery behavior, and inline suggestion systems still vary by product and version.
+            </p>
+          </aside>
+        </div>
+
+        <div class="support-grid">
+          <article class="support-card">
+            <h3>Not an autocomplete controller</h3>
+            <p>These files do not fully govern ghost-text or inline suggestion systems.</p>
+          </article>
+          <article class="support-card">
+            <h3>Not one file for every tool</h3>
+            <p>Different assistants expose different entrypoints, so the repository intentionally ships assistant-native adapters.</p>
+          </article>
+          <article class="support-card">
+            <h3>Not a license to over-compress</h3>
+            <p>The clarity override is part of the design. Compression is useful only when it remains safe and unambiguous.</p>
+          </article>
+          <article class="support-card">
+            <h3>Not a blind-copy bundle</h3>
+            <p>Especially for Copilot, the full bundle is a source bundle that still expects deliberate selection of what gets copied.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="resources" class="hero-panel section-card">
+        <div class="section-intro">
+          <div>
+            <span class="section-tag">Resources</span>
+            <h2>Where to go next inside the project</h2>
+            <p>
+              The landing page should be enough to understand the idea, but the repository also contains canonical rule files,
+              compatibility guidance, rollout plans, assistant bundle docs, and the MIT license. These are the places worth opening next.
+            </p>
+          </div>
+          <aside class="section-aside">
+            <h3>Project repository</h3>
+            <p>
+              Browse the full source tree, issue tracker, and project history at
+              <a href="https://github.com/veoplix/karpathy-caveman" target="_blank" rel="noreferrer">github.com/veoplix/karpathy-caveman</a>.
+            </p>
+          </aside>
+        </div>
+
+        <div class="detail-grid">
+          <article class="surface-card">
+            <span class="kicker">Start here</span>
+            <h3>Main repository guide</h3>
+            <p>Open <code>README.md</code> in the repository for the canonical text explanation of the idea, architecture, limitations, and maintenance model.</p>
+          </article>
+          <article class="surface-card">
+            <span class="kicker">Canonical files</span>
+            <h3>Core mode sources</h3>
+            <p>Open <code>AGENTS.md</code> and <code>.agents/skills/karpathy-caveman/SKILL.md</code> when you want the actual source of truth for the behavior model.</p>
+          </article>
+          <article class="surface-card">
+            <span class="kicker">Compatibility</span>
+            <h3>Assistant mapping</h3>
+            <p>Open <code>docs/compatibility-matrix.md</code> when you want the assistant-by-assistant mapping of always-on entrypoints, prompts, agents, skills, and bundles.</p>
+          </article>
+          <article class="surface-card">
+            <span class="kicker">Rollout</span>
+            <h3>Adoption sequence</h3>
+            <p>Open <code>docs/rollout-plan.md</code> when you need the step-by-step adoption model for Copilot, Claude, Codex, Cursor, or mixed-assistant repositories.</p>
+          </article>
+          <article class="surface-card">
+            <span class="kicker">Bundle docs</span>
+            <h3>Assistant-specific install guides</h3>
+            <p>Use the README files under <code>copilot/</code>, <code>claude/</code>, <code>codex/</code>, and <code>cursor/</code> when you need exact target paths and post-install usage guidance for a specific assistant.</p>
+          </article>
+          <article class="surface-card">
+            <span class="kicker">Validation</span>
+            <h3>Repository integrity checks</h3>
+            <p>Run <code>python scripts/validate_repo.py</code> to verify required files, forbidden roots, mirrored files, manifests, Markdown links, and this landing page's HTML links.</p>
+          </article>
+          <article class="surface-card">
+            <span class="kicker">License</span>
+            <h3>MIT licensing</h3>
+            <p>Open <code>LICENSE</code> for the repository license. The project also documents inspiration from <code>multica-ai/andrej-karpathy-skills</code> and <code>JuliusBrussee/caveman</code>.</p>
+          </article>
+          <article class="surface-card">
+            <span class="kicker">Repository link</span>
+            <h3>Public project home</h3>
+            <p><a href="https://github.com/veoplix/karpathy-caveman" target="_blank" rel="noreferrer">Open the GitHub repository</a> when you want the source tree, issues, history, or to copy the assets into another repository.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="footer-card" aria-labelledby="closing-title">
+        <div>
+          <span class="section-tag">Close</span>
+          <h2 id="closing-title">Use one behavior model. Ship it in the right format.</h2>
+          <p>
+            That is the whole project in one sentence. Karpathy Caveman exists to make AI coding assistants more disciplined,
+            more concise, easier to review, easier to maintain, and easier to deploy across multiple tools without losing the core idea.
+          </p>
+          <div class="button-row">
+            <a class="button" href="https://github.com/veoplix/karpathy-caveman" target="_blank" rel="noreferrer">Repository</a>
+            <a class="ghost-button" href="#top">Back to top</a>
+          </div>
+        </div>
+        <div>
+          <h3>Included public value</h3>
+          <ul>
+            <li>A clear rule set in <code>AGENTS.md</code>.</li>
+            <li>A portable shared skill in <code>.agents/skills/karpathy-caveman/SKILL.md</code>.</li>
+            <li>Assistant-native bundles for Copilot, Claude, Codex, and Cursor.</li>
+            <li>Copilot-specific slices for instruction, prompt, and plugin rollout.</li>
+            <li>A validator that protects mirrors, paths, and basic structural correctness.</li>
+            <li>MIT licensing plus documented inspirations and attribution context.</li>
+          </ul>
+          <p class="muted" style="margin-top: 12px;">
+            Repository URL: <a href="https://github.com/veoplix/karpathy-caveman" target="_blank" rel="noreferrer">github.com/veoplix/karpathy-caveman</a>
+          </p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const assistantData = {
+      copilot: {
+        label: "GitHub Copilot in VS Code",
+        intro: "Copilot has the broadest set of delivery surfaces in this repository, so the project documents both a full repo-file source bundle and narrower installation slices.",
+        fields: [
+          ["Always-on entrypoint", "AGENTS.md or .github/copilot-instructions.md"],
+          ["Manual trigger", "/karpathy-caveman via .github/prompts/karpathy-caveman.prompt.md"],
+          ["Agent surface", ".github/agents/karpathy-caveman.agent.md or the packaged plugin agent"],
+          ["Skill surface", ".agents/skills/karpathy-caveman/SKILL.md or the packaged plugin skill"],
+          ["Best fit", "Use the full bundle for source material, the instruction slice for always-on behavior, the prompt slice for explicit opt-in, or the plugin package for team distribution."],
+          ["Important caution", "The full Copilot bundle is a source bundle, not a blind-copy instruction. The plugin package is a separate delivery mechanism."],
+        ],
+      },
+      claude: {
+        label: "Claude Code",
+        intro: "Claude uses AGENTS.md as the canonical rules source, CLAUDE.md as the Claude-specific entrypoint, and a native .claude skill plus subagent inside the assistant bundle.",
+        fields: [
+          ["Always-on entrypoint", "CLAUDE.md importing @AGENTS.md"],
+          ["Manual trigger", "Native Claude skill invocation from .claude/skills/karpathy-caveman/SKILL.md"],
+          ["Agent surface", ".claude/agents/karpathy-caveman.md"],
+          ["Skill surface", ".claude/skills/karpathy-caveman/SKILL.md"],
+          ["Best fit", "Use the Claude bundle when you want the whole Claude-facing setup copied into another repository with minimal assembly."],
+          ["Important caution", "Do not copy CLAUDE.md without AGENTS.md, because CLAUDE.md imports it directly."],
+        ],
+      },
+      codex: {
+        label: "Codex",
+        intro: "Codex gets the shared core plus a Codex-native role file that restates the same behavioral contract in .codex/agents/karpathy-caveman.toml.",
+        fields: [
+          ["Always-on entrypoint", "AGENTS.md"],
+          ["Manual trigger", "Shared Agent Skills surface through .agents/skills/karpathy-caveman/SKILL.md"],
+          ["Agent surface", ".codex/agents/karpathy-caveman.toml"],
+          ["Skill surface", ".agents/skills/karpathy-caveman/SKILL.md"],
+          ["Best fit", "Use the Codex bundle when you want both a portable skill and a native Codex role available in the same repository."],
+          ["Important caution", "Host UX varies, so the exact role-selection interface depends on the Codex environment even when the files are correct."],
+        ],
+      },
+      cursor: {
+        label: "Cursor",
+        intro: "Cursor uses the shared core plus a native always-apply rule and a native agent, which makes it a good example of shared-plus-native layering.",
+        fields: [
+          ["Always-on entrypoint", "AGENTS.md plus .cursor/rules/karpathy-caveman.mdc"],
+          ["Manual trigger", "Shared Agent Skills surface through .agents/skills/karpathy-caveman/SKILL.md"],
+          ["Agent surface", ".cursor/agents/karpathy-caveman.md"],
+          ["Skill surface", ".agents/skills/karpathy-caveman/SKILL.md"],
+          ["Best fit", "Use the Cursor bundle when you want passive defaults from the rule and an explicit Cursor-native subagent on top of them."],
+          ["Important caution", "The root repository keeps Cursor-native files at the root because they do not collide with the shared skill path; that is intentional."],
+        ],
+      },
+    };
+
+    const tabButtons = Array.from(document.querySelectorAll(".tab-button"));
+    const assistantPanel = document.getElementById("assistant-panel");
+    const navLinks = Array.from(document.querySelectorAll(".nav-links a"));
+    const sections = navLinks
+      .map((link) => document.querySelector(link.getAttribute("href")))
+      .filter(Boolean);
+
+    function renderAssistant(key) {
+      const data = assistantData[key];
+      assistantPanel.innerHTML = `
+        <h3>${data.label}</h3>
+        <p>${data.intro}</p>
+        <div class="panel-grid">
+          ${data.fields
+            .map(
+              ([label, value]) => `
+                <div class="panel-item">
+                  <strong>${label}</strong>
+                  <div>${value}</div>
+                </div>`
+            )
+            .join("")}
+        </div>
+      `;
+    }
+
+    function activateTab(key) {
+      tabButtons.forEach((button) => {
+        const isActive = button.dataset.assistant === key;
+        button.setAttribute("aria-selected", String(isActive));
+        if (isActive) {
+          assistantPanel.setAttribute("aria-labelledby", button.id);
+        }
+      });
+      renderAssistant(key);
+    }
+
+    tabButtons.forEach((button) => {
+      button.addEventListener("click", () => activateTab(button.dataset.assistant));
+    });
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) {
+            return;
+          }
+
+          navLinks.forEach((link) => {
+            const isMatch = link.getAttribute("href") === `#${entry.target.id}`;
+            link.classList.toggle("is-active", isMatch);
+          });
+        });
+      },
+      {
+        rootMargin: "-40% 0px -45% 0px",
+        threshold: 0,
+      }
+    );
+
+    sections.forEach((section) => observer.observe(section));
+    activateTab("copilot");
+  </script>
+</body>
+</html>

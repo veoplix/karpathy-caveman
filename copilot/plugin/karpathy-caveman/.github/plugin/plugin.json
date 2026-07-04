@@ -1,0 +1,27 @@
+{
+  "name": "karpathy-caveman",
+  "description": "Karpathy + Caveman for VS Code Copilot: disciplined engineering behavior, surgical diffs, goal-driven verification, and concise high-signal answers.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Veoplix"
+  },
+  "repository": "https://github.com/veoplix/karpathy-caveman",
+  "license": "MIT",
+  "keywords": [
+    "github-copilot",
+    "vscode",
+    "agent",
+    "skill",
+    "karpathy",
+    "caveman",
+    "high-signal",
+    "minimal-diff",
+    "concise"
+  ],
+  "agents": [
+    "./agents"
+  ],
+  "skills": [
+    "./skills/karpathy-caveman"
+  ]
+}
