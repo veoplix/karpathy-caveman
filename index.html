@@ -616,6 +616,45 @@
             color: var(--text-muted);
         }
 
+        .nav-collapse-toggle {
+            display: none;
+            padding: 0.1rem 0.15rem;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            margin-left: auto;
+            flex: 0 0 auto;
+            line-height: 1;
+        }
+
+        body.nav-collapsible .site-nav {
+            overflow: hidden;
+            max-height: var(--expanded-nav-height, 240px);
+            transition: max-height 0.24s ease;
+            justify-content: flex-start;
+            gap: 10px;
+        }
+
+        body.nav-collapsible .nav-collapse-toggle {
+            display: inline-flex;
+        }
+
+        body.nav-collapsible.nav-collapsed .site-nav {
+            max-height: 3.5rem;
+            align-items: center;
+            flex-wrap: nowrap;
+            padding-top: 10px;
+            padding-bottom: 10px;
+        }
+
+        body.nav-collapsible.nav-collapsed .nav-links {
+            display: none;
+        }
+
         @media (max-width: 1080px) {
             .hero,
             .section-intro,
@@ -705,6 +744,9 @@
                 <a href="#limits">Limits</a>
                 <a href="#resources">Resources</a>
             </div>
+            <button id="navCollapseToggle" class="nav-collapse-toggle" type="button" aria-expanded="true" aria-label="Collapse menu" title="Collapse menu">
+                <span aria-hidden="true">▲</span>
+            </button>
         </nav>
 
         <header class="hero" id="top">
@@ -1331,10 +1373,81 @@
 
         const tabButtons = Array.from(document.querySelectorAll(".tab-button"));
         const assistantPanel = document.getElementById("assistant-panel");
+        const siteNav = document.querySelector(".site-nav");
+        const navCollapseToggle = document.getElementById("navCollapseToggle");
         const navLinks = Array.from(document.querySelectorAll(".nav-links a"));
         const sections = navLinks
             .map((link) => document.querySelector(link.getAttribute("href")))
             .filter(Boolean);
+
+        function areNavLinksWrapped() {
+            if (!window.matchMedia('(max-width: 980px)').matches) return false;
+            if (!navLinks.length) return false;
+
+            const firstRowTop = navLinks[0].offsetTop;
+            return navLinks.slice(1).some(link => link.offsetTop > firstRowTop);
+        }
+
+        function updateNavCollapseToggle() {
+            const isCollapsed = document.body.classList.contains('nav-collapsed');
+            const indicator = isCollapsed ? '▼' : '▲';
+            navCollapseToggle.innerHTML = `<span aria-hidden="true">${indicator}</span>`;
+            navCollapseToggle.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
+            navCollapseToggle.setAttribute('aria-label', isCollapsed ? 'Expand menu' : 'Collapse menu');
+            navCollapseToggle.title = isCollapsed ? 'Expand menu' : 'Collapse menu';
+        }
+
+        function setNavCollapsed(shouldCollapse) {
+            const canCollapse = document.body.classList.contains('nav-collapsible');
+            if (!canCollapse && shouldCollapse) return;
+
+            document.body.classList.toggle('nav-collapsed', shouldCollapse);
+            updateNavCollapseToggle();
+        }
+
+        let lastWindowScrollTop = window.scrollY;
+        let suppressAutoCollapseUntil = 0;
+        function handleNavAutoCollapse() {
+            if (!document.body.classList.contains('nav-collapsible')) return;
+            if (document.body.classList.contains('nav-collapsed')) return;
+            if (Date.now() < suppressAutoCollapseUntil) return;
+
+            const currentTop = window.scrollY;
+            const scrollingDown = currentTop > lastWindowScrollTop + 4;
+            lastWindowScrollTop = currentTop;
+
+            if (scrollingDown && currentTop > 12) {
+                setNavCollapsed(true);
+            }
+        }
+
+        function updateNavCollapsibleMode() {
+            const wasCollapsible = document.body.classList.contains('nav-collapsible');
+            const wasCollapsed = document.body.classList.contains('nav-collapsed');
+
+            if (wasCollapsed) {
+                document.body.classList.remove('nav-collapsed');
+            }
+
+            const shouldEnable = areNavLinksWrapped();
+
+            document.body.classList.toggle('nav-collapsible', shouldEnable);
+
+            if (!shouldEnable) {
+                document.body.classList.remove('nav-collapsed');
+                siteNav.style.removeProperty('--expanded-nav-height');
+                updateNavCollapseToggle();
+                return;
+            }
+
+            siteNav.style.setProperty('--expanded-nav-height', `${siteNav.scrollHeight}px`);
+
+            if (!wasCollapsible || wasCollapsed) {
+                document.body.classList.add('nav-collapsed');
+            }
+
+            updateNavCollapseToggle();
+        }
 
         function renderAssistant(key) {
             const data = assistantData[key];
@@ -1370,6 +1483,65 @@
             button.addEventListener("click", () => activateTab(button.dataset.assistant));
         });
 
+        navCollapseToggle.addEventListener('click', () => {
+            const isCurrentlyCollapsed = document.body.classList.contains('nav-collapsed');
+            setNavCollapsed(!isCurrentlyCollapsed);
+
+            if (isCurrentlyCollapsed) {
+                suppressAutoCollapseUntil = Date.now() + 1200;
+                lastWindowScrollTop = window.scrollY;
+            }
+        });
+
+        function scrollToSectionFromMenu(hash) {
+            if (!hash || !hash.startsWith('#')) return;
+
+            const section = document.querySelector(hash);
+            if (!section) return;
+
+            const needsCollapse = document.body.classList.contains('nav-collapsible') && !document.body.classList.contains('nav-collapsed');
+            if (needsCollapse) {
+                setNavCollapsed(true);
+            }
+
+            // Guard against immediate re-collapse while layout settles after manual nav changes.
+            suppressAutoCollapseUntil = Date.now() + 1200;
+
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    const navOffset = siteNav ? siteNav.getBoundingClientRect().height : 0;
+                    const targetTop = section.getBoundingClientRect().top + window.scrollY - navOffset - 10;
+                    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+                    window.scrollTo({
+                        top: Math.max(0, targetTop),
+                        behavior: prefersReducedMotion ? 'auto' : 'smooth'
+                    });
+
+                    if (window.location.hash !== hash) {
+                        history.pushState(null, '', hash);
+                    }
+                });
+            });
+        }
+
+        navLinks.forEach((link) => {
+            link.addEventListener('click', (event) => {
+                const hash = link.getAttribute('href');
+                if (!hash || !hash.startsWith('#')) return;
+
+                event.preventDefault();
+                scrollToSectionFromMenu(hash);
+            });
+        });
+
+        window.addEventListener('resize', updateNavCollapsibleMode, { passive: true });
+        window.addEventListener('orientationchange', updateNavCollapsibleMode);
+        window.addEventListener('scroll', handleNavAutoCollapse, { passive: true });
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', updateNavCollapsibleMode);
+        }
+
         const observer = new IntersectionObserver(
             (entries) => {
                 entries.forEach((entry) => {
@@ -1391,6 +1563,7 @@
 
         sections.forEach((section) => observer.observe(section));
         activateTab("copilot");
+        requestAnimationFrame(updateNavCollapsibleMode);
     </script>
 </body>
 </html>
